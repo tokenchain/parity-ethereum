@@ -238,7 +238,8 @@ usage! {
 	{
 		// Global flags and arguments
 		["Operating Options"]
-			FlAG flag_no_empty_block_result: (bool) = false, or |c: &Config| c.parity.as_ref()?.no_empty_block_result.clone(),
+			FLAG flag_no_empty_block_result: (bool) = false, or |c: &Config| c.parity.as_ref()?.no_empty_block_result
+			.clone(),
 			"--no-empty-block-result",
 			"RPC calls will return an error if ancient block sync is still in progress and the information requested \
 			block information could not be found",

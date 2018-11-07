@@ -242,8 +242,8 @@ pub fn check_block_gap<'a, T, C>(client: &'a C) -> impl Fn(Option<T>) -> RpcResu
 		if response.is_none() {
 			let BlockChainInfo { ancient_block_hash, .. } = client.chain_info();
 			// block information was requested, but unfortunately we couldn't find it and there
-			// are gaps in the database ethcore/src/blockchain/blockchain.rs:202
-			if ancient_block_hash.is_some()  {
+			// are gaps in the database ethcore/src/blockchain/blockchain.rs
+			if ancient_block_hash.is_some() {
 				return Err(Error {
 					code: ErrorCode::ServerError(codes::UNSUPPORTED_REQUEST),
 					message: "Block information is incomplete while ancient block sync is still in progress, before \

@@ -643,13 +643,23 @@ impl<C, SN: ?Sized, S: ?Sized, M, EM, T: StateInfo + 'static> Eth for EthClient<
 
 	fn block_by_hash(&self, hash: RpcH256, include_txs: bool) -> BoxFuture<Option<RichBlock>> {
 		let result = self.rich_block(BlockId::Hash(hash.into()).into(), include_txs)
-			.and_then(errors::check_block_gap(&*self.client));
+			.and_then(|result| {
+				if self.client.client_config().no_empty_block_result {
+					return errors::check_block_gap(&*self.client)(result)
+				}
+				Ok(result)
+			});
 		Box::new(future::done(result))
 	}
 
 	fn block_by_number(&self, num: BlockNumber, include_txs: bool) -> BoxFuture<Option<RichBlock>> {
 		let result = self.rich_block(num.clone().into(), include_txs)
-			.and_then(errors::check_block_number_existence(&*self.client, num));
+			.and_then(|result| {
+				if self.client.client_config().no_empty_block_result {
+					return errors::check_block_number_existence(&*self.client, num)(result)
+				}
+				Ok(result)
+			});
 		Box::new(future::done(result))
 	}
 
@@ -659,14 +669,24 @@ impl<C, SN: ?Sized, S: ?Sized, M, EM, T: StateInfo + 'static> Eth for EthClient<
 			self.miner.transaction(&hash)
 				.map(|t| Transaction::from_pending(t.pending().clone()))
 		});
-		let result = Ok(tx).and_then(errors::check_block_gap(&*self.client));
+		let result = Ok(tx).and_then(|result| {
+			if self.client.client_config().no_empty_block_result {
+				return errors::check_block_gap(&*self.client)(result)
+			}
+			Ok(result)
+		});
 		Box::new(future::done(result))
 	}
 
 	fn transaction_by_block_hash_and_index(&self, hash: RpcH256, index: Index) -> BoxFuture<Option<Transaction>> {
 		let id = PendingTransactionId::Location(PendingOrBlock::Block(BlockId::Hash(hash.into())), index.value());
 		let result = self.transaction(id)
-			.and_then(errors::check_block_gap(&*self.client));
+			.and_then(|result| {
+				if self.client.client_config().no_empty_block_result {
+					return errors::check_block_gap(&*self.client)(result)
+				}
+				Ok(result)
+			});
 		Box::new(future::done(result))
 	}
 
@@ -680,7 +700,12 @@ impl<C, SN: ?Sized, S: ?Sized, M, EM, T: StateInfo + 'static> Eth for EthClient<
 
 		let transaction_id = PendingTransactionId::Location(block_id, index.value());
 		let result = self.transaction(transaction_id)
-			.and_then(errors::check_block_number_existence(&*self.client, num));
+			.and_then(|result| {
+				if self.client.client_config().no_empty_block_result {
+					return errors::check_block_number_existence(&*self.client, num)(result)
+				}
+				Ok(result)
+			});
 		Box::new(future::done(result))
 	}
 
@@ -693,13 +718,16 @@ impl<C, SN: ?Sized, S: ?Sized, M, EM, T: StateInfo + 'static> Eth for EthClient<
 			_ => {
 				let receipt = self.client.transaction_receipt(TransactionId::Hash(hash));
 				let result = Ok(receipt.map(Into::into))
-					.and_then(errors::check_block_gap(&*self.client));
+					.and_then(|result| {
+						if self.client.client_config().no_empty_block_result {
+							println!("{}", self.client.client_config().no_empty_block_result);
+							return errors::check_block_gap(&*self.client)(result)
+						}
+						Ok(result)
+					});
 				Box::new(future::done(result))
 			}
 		}
-
-		let receipt = self.client.transaction_receipt(TransactionId::Hash(hash));
-		Box::new(future::ok(receipt.map(Into::into)))
 	}
 
 	fn uncle_by_block_hash_and_index(&self, hash: RpcH256, index: Index) -> BoxFuture<Option<RichBlock>> {
