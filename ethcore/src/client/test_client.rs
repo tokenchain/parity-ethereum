@@ -880,7 +880,7 @@ impl BlockChainClient for TestBlockChainClient {
 	fn registrar_address(&self) -> Option<Address> { None }
 
 	fn client_config(&self) -> ClientConfig {
-		unimplemented!("TestClient doesn't have a ClientConfig; qed")
+		ClientConfig::default()
 	}
 }
 
